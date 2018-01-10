@@ -40,8 +40,8 @@ In this example I expect only the second (output) layers recives an expected out
 - input: [0, 1, 1, 1] -> [0.0140, 0.9854]
 
 
-As you can see it works, it's not that smart but it works.
 
+As you can see it works, it's not that smart but it works.
 In the first, second and third outputs it was pretty sure about the user's reaction because it was trained exactly for those cases,
 BUT when faced with input #4 it reached a minor set back, it knows the user hates the two center cases, but also like the first case.
 Ultimately due to the fact that it was trained more to hate the inner two cases than to like the first case it thinks the user will most likely dislike it.
