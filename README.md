@@ -6,37 +6,38 @@ In it's current form, it is used to determine how much a user will like / dislik
 To build a network you need to specifi it's structure. 
 In this example the hidden layer has 4 neurons and the output layer has 2.
 
-Constructing the network:
+## Constructing the network:
 
-var network = Network(structure: [4, 2])
+`var network = Network(structure: [4, 2])`
 
 
 
+## Training the network
 To train the network first input a set of neuron cases (i.e state):
 
-network.setInput(input: [[0, 0, 1, 0]])
+`network.setInput(input: [[0, 0, 1, 0]])`
 
 Then adjust according to the expected output, 
 In this example I expect only the second (output) layers recives an expected output:
 
-network.adjust(expected: [[], [0, 1]])
+`network.adjust(expected: [[], [0, 1]])`
 
 
 
-Example:
+## Example:
 
-- Training data sets (each ran 10,000 times):
-    input: [[1, 0, 0, 0]] / expected:  [[], [1, 0]]
-    input: [[0, 0, 1, 0]] / expected:  [[], [0, 1]]
-    input: [[0, 1, 1, 0]] / expected:  [[], [0, 1]]
-    input: [[1, 0, 0, 1]] / expected:  [[], [1, 0]]
+#### Inputs: (each ran 10,000 times):
+- input: [1, 0, 0, 0] / expected:  [[], [1, 0]]
+- input: [0, 0, 1, 0] / expected:  [[], [0, 1]]
+- input: [0, 1, 1, 0] / expected:  [[], [0, 1]]
+- input: [1, 0, 0, 1] / expected:  [[], [1, 0]]
     
-- Outputs: 
-    input: [[1, 0, 0, 0]] --> [0.99894748955184687, 0.0010683111095385147] 
-    input: [[0, 0, 1, 0]] --> [0.00056865048709197404, 0.99926272418182271]
-    input: [[0, 1, 1, 0]] --> [0.00041189102698458688, 0.99968771720806238] 
-    input: [[1, 1, 1, 0]] --> [0.28113961467317533, 0.77393785967805873]
-    input: [[0, 1, 1, 1]] --> [0.014084724119351666, 0.98548390517500961]
+#### Outputs:
+- input: [1, 0, 0, 0] -> [0.9989, 0.0010] 
+- input: [0, 0, 1, 0] -> [0.0005, 0.9991]
+- input: [0, 1, 1, 0] -> [0.0004, 0.9996] 
+- input: [1, 1, 1, 0] -> [0.2811, 0.7739]
+- input: [0, 1, 1, 1] -> [0.0140, 0.9854]
 
 
 As you can see it works, it's not that smart but it works.
