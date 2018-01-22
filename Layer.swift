@@ -10,6 +10,8 @@ import Foundation
 
 class Layer : Hashable{
     
+    public enum LayerType { case INPUT, HIDDEN, OUTPUT }
+    
     static func ==(lhs: Layer, rhs: Layer) -> Bool {
         return (lhs.id == rhs.id)
     }
@@ -20,86 +22,71 @@ class Layer : Hashable{
         return id_count
     }
     
-    private let size : Int
-    private let network : Network
-    private var neurons : [Neuron] = []
-    private var input : [Double] = []
+    let id = generateID()
+    let network : Network!
+    var hashValue: Int { return self.id }
+    var type : LayerType!
+    var neurons : [Neuron] = []
+    var description : String { return String(describing: id) + ": " + String(describing: type) +  " [" + String(describing: neurons.count) + "]" }
+    var visualDescription : String { return neurons.reduce(into: "", {string, neuron in string += neuron.description + " \n"}) }
     
-    public let id = generateID()
-    public var hashValue: Int { return self.id }
     
-
-    init(network : Network, size : Int){
+    init(network : Network, size : Int, type : LayerType){
         
-        self.size = size
         self.network = network
+        self.type = type
         
         for _ in 0..<size{
             neurons.append(Neuron(layer: self))
         }
     }
     
-    public func InitiateWeights(){
-        for neuron in neurons{
-            neuron.initiateWeights()
-        }
-    }
-    
-    public func setInput(input : [Double]){
-        self.input = input
-    }
-    
-    public func getNeurons() -> [Neuron]{
-        return neurons
-    }
-    
-    public func hasNextLayer() -> Bool{
-        return network.getLayers().count > (id + 1)
-    }
-    
-    public func hasPreviousLayer() -> Bool{
-        return id > 0
-    }
 
-    public func isOutputlayer() -> Bool{
-        return !hasNextLayer()
-    }
-    
-    public func getNextLayer() -> Layer{
-        return network.getLayers()[id + 1]
-    }
-    
-    public func getPreviousLayer() -> Layer{
-        return network.getLayers()[id - 1]
-    }
-    
-    public func getSize() -> Int{
-        return self.size
-    }
-    
-    public func getInput() -> [Double]{
-        return self.input
-    }
-    
-    
-    public func getOutput() -> [Double]{
-        
-        var output : [Double] = []
-        
-        for neuron in neurons{
-            output.append(neuron.getOutput())
-        }
-        
-        return output
-    }
-    
-    
-    public func adjust(expected : [Double]){
-        
-        for neuron in neurons{
-            neuron.adjust()
+    func feedForward(){
+        if !isLast(){
+            for nextNeuron in getNextLayer().neurons{
+                nextNeuron.input = neurons.reduce(into: 0, { sum, localNeuron in sum += localNeuron.weights[nextNeuron]! * localNeuron.getActivation() })
+            }
+            
+            getNextLayer().feedForward()
         }
     }
     
+    
+    func getOutput() -> Double{
+        return neurons.reduce(into: 0, { sum, neuron in sum += neuron.getActivation()})
+    }
+    
+    
+    func isHidden() -> Bool{
+        return type == .HIDDEN
+    }
+    
+    
+    func isFirst() -> Bool{
+        return id == 0
+    }
+    
+    
+    func isLast() -> Bool{
+        return id >= network.layers.count - 1
+    }
+    
+    
+    func isLastHiddenLayer() -> Bool{
+        return network.layers.count - 2 > id
+    }
+    
+    
+    func getNextLayer() -> Layer{
+        return network.layers[id + 1]
+    }
+    
+    
+    func getPreviousLayer() -> Layer{
+        return network.layers[id - 1]
+    }
+    
+
     
 }

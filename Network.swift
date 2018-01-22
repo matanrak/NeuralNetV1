@@ -11,65 +11,102 @@ import Foundation
 class Network{
     
     
-    public var layers : [Layer] = []
+    var layers : [Layer] = []
+    var inputVector : [Double]?
+    var description : String { return layers.reduce(into: "", {string, layer in string += layer.visualDescription}) }
     
-    init(structure : [Int]){
+    
+    init(_ structure : [Int]){
         
-        for i in structure{
-            layers.append(Layer(network : self, size: i))
+        for i in 0...(structure.count - 1){
+            switch i {
+             
+            case 0:
+                layers.append(Layer(network : self, size: structure[i], type: Layer.LayerType.INPUT))
+            
+            case structure.count - 1:
+                layers.append(Layer(network : self, size: structure[i], type: Layer.LayerType.OUTPUT))
+                
+            default:
+                layers.append(Layer(network : self, size: structure[i], type: Layer.LayerType.HIDDEN))
+        
+            }
         }
         
-        for layer in layers {
-            layer.InitiateWeights()
+        layers.forEach{ layer in layer.neurons.forEach{ neuron in neuron.initiateWeights() }}
+        
+        print("Network: ")
+        for layer in layers{
+            print(layer.description)
         }
     }
 
     
-    public func setInput(input : [[Double]]){
-        
-        for i in 0...(input.count - 1){
-            layers[i].setInput(input: input[i])
-        }
+    func getOutputLayer() -> Layer{
+        return layers.first(where: {$0.type == Layer.LayerType.OUTPUT}) ?? layers.last!
     }
     
     
-    public func getLayers() -> [Layer]{
-        return layers
-    }
-    
-    
-    public func getOutputLayer() -> Layer{
-        return layers[layers.count - 1]
-    }
-    
-    
-    public func getOutput() -> [Double]{
+    func getOutput(_ input : [Double]) -> [Double]{
         
         var output : [Double] = []
-            
-        for neuron in getOutputLayer().getNeurons(){
-            output.append(neuron.getOutput())
-        }
-        
+        getOutputLayer().neurons.forEach{ neuron in output.append(neuron.getActivation()) }
         return output
     }
     
     
-    public func adjust(expected : [[Double]]){
+    func feedForward(_ inputVector: [Double]){
+       
+        self.inputVector = inputVector
+        layers[0].feedForward()
+    }
+    
+    
+    func backProp(expectedVector : [Double]){
         
-        for layer in layers{
-            if(expected[layer.id].count == layer.getNeurons().count){
-                if(layer.hasPreviousLayer()){
-                    for neuron in layer.getNeurons(){
-                        neuron.expected = expected[layer.id][neuron.id]
-                        neuron.adjust()
-                    }
-                }
+        var delta : [Double] = Array(repeating: 1, count: layers.count)
+        
+        var errorSum = 0
+        
+        for hiddenNeuron in getOutputLayer().getPreviousLayer().neurons{
+            
+            let errorSum = getOutputLayer().neurons.reduce(into: 0, {sum, neuron in sum += (hiddenNeuron.weights[neuron]! *  (expectedVector[neuron.id] - neuron.getActivation()))})
+        
+        }
+        
+        getOutputLayer().neurons.forEach{ neuron in
+
+            let error = expectedVector[neuron.id] - neuron.getActivation()
+            let delta = error * neuron.getActivation() * (1 - neuron.getActivation())
+            
+            print("error: ", error)
+            
+            for hiddenNeuron in neuron.layer.getPreviousLayer().neurons{
+                let error = expectedVector[neuron.id] - hiddenNeuron.getActivation()
+                hiddenNeuron.weights[neuron] = Utils.sigmoid(hiddenNeuron.getActivation() * error)
             }
         }
     }
     
     
+    func train(input: [Double], expected : [Double]){
+        
+        feedForward(input)
+        backProp(expectedVector: expected)
+        /*
+        getOutputLayer().neurons.forEach{ neuron in
+            neuron.adjust(input: input, delta: expected[neuron.id] - neuron.getActivation())
+            
+            layers.forEach{ layer in
+                if layer.isHidden(){
+                    layer.neurons.forEach{ prevNeuron in
+                        prevNeuron.adjust(input: input, delta: expected[neuron.id] - neuron.getActivation())
+                    }
+                }
+            }
+        }
+ */
+    }
     
 }
 
