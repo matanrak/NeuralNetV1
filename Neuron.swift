@@ -8,10 +8,9 @@
 
 import Foundation
 
-
-class Neuron : Hashable{
+public class Neuron : Hashable{
     
-    static func ==(lhs: Neuron, rhs: Neuron) -> Bool { return (lhs.id == rhs.id) }
+    public static func ==(left: Neuron, right: Neuron) -> Bool { return left.id == right.id && left.layer.id == right.layer.id }
     
     static var id_count : Int = -1
     static var prev_layer : Int = -1
@@ -34,15 +33,32 @@ class Neuron : Hashable{
     let layer : Layer
 
     var weights : [Neuron : Double] = [:]
+   
+    public var hashValue: Int { return self.id }
     var bias : Double = 0.0
-    var hashValue: Int { return self.id }
-    var input: Double = 0.5
-    var description : String { return String(describing: id) + ": " + String(describing: getActivation()) }
-        //" [" + String(describing: weights) + "]" }
+    var delta : Double = 0.0
+    var prevOut = 0.0
     
-
-    public init(layer : Layer){
+    var activation : Double{
         
+        if layer.isFirst(){
+            return layer.network.inputVector![id]
+        }
+
+        let prevActivations = layer.previous.neurons.map { $0.activation }
+        let prevWeights = layer.previous.neurons.map { $0.weights[self] }
+
+        let activation = dotProduct(v1: prevActivations, v2: prevWeights as! [Double])
+        prevOut = activation
+        
+        return sigmoid(activation + bias)
+    }
+    
+    var description : String { return String(describing: id) + ": " + String(describing: activation) + " " + String(describing: weights.values.map({$0}))}
+
+    
+    public init(layer : Layer){
+       
         self.layer = layer
         self.id = Neuron.generateID(layer: layer)
     }
@@ -51,34 +67,25 @@ class Neuron : Hashable{
     func initiateWeights(){
         
         if !layer.isLast(){
-            for next_neuron in layer.getNextLayer().neurons{
+            for next_neuron in layer.next.neurons{
                 weights[next_neuron] = drand48()
             }
         }
     }
     
     
-    func adjust(input: [Double], delta : Double){
+    func adjust(delta : Double){
         
         if !layer.isFirst(){
-            for prevNeuron in layer.getPreviousLayer().neurons{
-                prevNeuron.weights[self] = Neuron.learning_rate * delta * prevNeuron.getActivation()
+
+            //print("old w: ",  layer.getPreviousLayer().neurons[0].weights[self])
+            layer.previous.neurons.forEach{ prevNeuron in
+                prevNeuron.weights[self] =  prevNeuron.weights[self]! + Neuron.learning_rate * delta * prevNeuron.activation
             }
+            //print("current w: ",  layer.getPreviousLayer().neurons[0].weights[self])
+            
+          //  bias = Neuron.learning_rate * delta
         }
-        
-        bias = Neuron.learning_rate * delta
-    }
-    
-    
-    func getActivation() -> Double{
- 
-        if layer.isFirst(){
-            return network.inputVector?[id] ?? -1
-           // let sum  = layer.getPreviousLayer().neurons.reduce(0, {x, y in x + bias + input.reduce(0, {x2, y2 in x2 + y.weights[self]! * y.getActivation(input) * y2})})
-          //  return Utils.sigmoid(sum)
-        }
-        
-        return input
     }
     
     

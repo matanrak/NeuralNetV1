@@ -8,22 +8,22 @@
 
 import Foundation
 
-class Network{
+public class NeuralNetwork{
     
-    
-    var layers : [Layer] = []
-    var cachedDeltas : [Neuron : Double] = [:]
-    var inputVector : [Double]?
-    var description : String { return layers.reduce(into: "", {string, layer in string += layer.visualDescription}) }
+    public var layers : [Layer]!
+    public var cachedDeltas : [Neuron : Double] = [:]
     public var outputLayer: Layer { get{ return layers.first(where: {$0.type == Layer.LayerType.OUTPUT}) ?? layers.last! } }
-    public var learingRate = 0.1
-
+    public var description: String { get{ return layers.reduce(into: "", {string, layer in string += layer.visualDescription}) } }
+    public var learningRate = 0.01
+    public var inputVector : [Double]!
     
-    init(_ structure : [Int]){
+    public init(structure : [Int]){
+        
+        self.layers = []
+        self.cachedDeltas = [:]
         
         for i in 0...(structure.count - 1){
             switch i {
-             
             case 0:
                 layers.append(Layer(network : self, size: structure[i], type: Layer.LayerType.INPUT))
             
@@ -36,28 +36,41 @@ class Network{
         }
         
         layers.forEach{ layer in layer.neurons.forEach{ neuron in neuron.initiateWeights() }}
+    }
+    
+    
+    public func getOutput(_ input : [Double]) -> [Double]{
         
-        print("Network: ")
-        for layer in layers{
-            print(layer.description)
-        }
-    }
+        return layers.reduce(input) { $1.outputs(inputs: $0) }
 
-    
-    func getOutputLayer() -> Layer{
-        return layers.first(where: {$0.type == Layer.LayerType.OUTPUT}) ?? layers.last!
+        //return outputLayer.neurons.lazy.map({$0.})
     }
     
-    
-    func getOutput(_ input : [Double]) -> [Double]{
-
-        self.inputVector = input
-        return getOutputLayer().neurons.lazy.map({$0.activation})
-    }
     
     
     func backProp(expectedVector : [Double]){
+     
+        layers.last!.calculateDelta(expected: expectedVector)
+
+        for layer in layers.lazy.filter({!$0.isFirst() && !$0.isLast()}) {
+            layer.calculateDelta(nextLayer: layers[layer.id + 1])
+        }
         
+        for layer in layers.lazy.filter({!$0.isFirst()}) {
+            //prevNeuron.weights[self] =  prevNeuron.weights[self]! + Neuron.learning_rate * delta * prevNeuron.activation
+
+            for neuron in layer.neurons {
+                for prevNeuron in neuron.layer.previous.neurons {
+                    prevNeuron.weights[neuron] = prevNeuron.weights[neuron]! + (learningRate * (prevNeuron.activation  * neuron.delta))
+                    //neuron.bias = Neuron.learning_rate * neuron.delta
+                }
+            }
+        }
+    }
+        
+
+    /*
+    func backPropoLD(expectedVector : [Double]){
         
         for layer in layers.lazy.filter({!$0.isFirst()}).map({$0}).reversed() {
 
@@ -72,7 +85,7 @@ class Network{
                // print(layer.id, " - ", neuron.id, " -> ", delta )
                 
                 layer.previous.neurons.forEach{ prevNeuron in
-                    cachedDeltas[prevNeuron] = Utils.sigmoid(Double((cachedDeltas[prevNeuron] ?? 0) + delta))
+                    //cachedDeltas[prevNeuron] = Utils.sigmoid(Double((cachedDeltas[prevNeuron] ?? 0) + delta))
                 }
                 
                 neuron.adjust(delta: delta)
@@ -98,15 +111,15 @@ class Network{
         for layer in layers.lazy.filter({!$0.isLast() && !$0.isFirst()}).map({$0}).reversed(){
             for neuron in layer.neurons{
                 for from in neuron.layer.previous.neurons{
-                    
+
                     let aj = neuron.activation
                     let ai = from.activation
                     
                     let sum : Double = neuron.layer.next.neurons.reduce(into: 0, { c, next in
-                        let wjk = neuron.weights[next]!
+                        let wjk = next.weights[neuron]
                         let desiredOutput = expectedVector[next.id]
                         let ak = next.activation
-                        c += (-(desiredOutput - ak) * ak * (1 - ak) * wjk)
+                        c += (-(desiredOutput - ak) * ak * (1 - ak) * wjk!)
                     })
                     
                     let deltaWeight = -learingRate * (aj * (1 - aj) * ai * sum)
@@ -116,13 +129,59 @@ class Network{
         }
     }
     
+ 
+     public void applyBackpropagation(double expectedOutput[]) {
+     
+     int i = 0;
+     for (Neuron n : outputLayer) {
+     ArrayList<Connection> connections = n.getAllInConnections();
+     for (Connection con : connections) {
+     double ak = n.getOutput();
+     double ai = con.leftNeuron.getOutput();
+     double desiredOutput = expectedOutput[i];
+     
+     double partialDerivative = -ak * (1 - ak) * ai * (desiredOutput - ak);
+     double deltaWeight = -learningRate * partialDerivative;
+     double newWeight = con.getWeight() + deltaWeight;
+     con.setDeltaWeight(deltaWeight);
+     con.setWeight(newWeight + momentum * con.getPrevDeltaWeight());
+     }
+     i++;
+     }
+     
+     // update weights for the hidden layer
+     for (Neuron n : hiddenLayer) {
+         ArrayList<Connection> connections = n.getAllInConnections();
+         for (Connection con : connections) {
+         double aj = n.getOutput();
+         double ai = con.leftNeuron.getOutput();
+         double sumKoutputs = 0;
+         int j = 0;
+             for (Neuron out_neu : outputLayer) {
+                 double wjk = out_neu.getConnection(n.id).getWeight();
+                 double desiredOutput = (double) expectedOutput[j];
+                 double ak = out_neu.getOutput();
+                 j++;
+                 sumKoutputs = sumKoutputs + (-(desiredOutput - ak) * ak * (1 - ak) * wjk);
+             }
+     
+         double partialDerivative = aj * (1 - aj) * ai * sumKoutputs;
+         double deltaWeight = -learningRate * partialDerivative;
+         double newWeight = con.getWeight() + deltaWeight;
+         con.setDeltaWeight(deltaWeight);
+         con.setWeight(newWeight + momentum * con.getPrevDeltaWeight());
+         }
+    }
+}
+ 
+    */
     
-    func train(input: [Double], expected : [Double]){
+    public func train(input: [Double], expected : [Double]){
         
+        inputVector = input
         cachedDeltas.removeAll()
-        self.inputVector = input
         
-        applyBackProp(expectedVector: expected)
+        backProp(expectedVector: expected)
         
         /*
         getOutputLayer().neurons.forEach{ neuron in

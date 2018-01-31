@@ -8,13 +8,11 @@
 
 import Foundation
 
-class Layer : Hashable{
+public class Layer : Hashable{
     
     public enum LayerType { case INPUT, HIDDEN, OUTPUT }
     
-    static func ==(lhs: Layer, rhs: Layer) -> Bool {
-        return (lhs.id == rhs.id)
-    }
+    public static func == (lhs: Layer, rhs: Layer) -> Bool { return (lhs.id == rhs.id) }
     
     static var id_count : Int = -1
     static func generateID() -> Int {
@@ -22,41 +20,50 @@ class Layer : Hashable{
         return id_count
     }
     
+    public var hashValue: Int { return self.id }
     let id = generateID()
-    let network : Network!
-    var hashValue: Int { return self.id }
+    
+    let network : NeuralNetwork!
     var type : LayerType!
     var neurons : [Neuron] = []
+    
+    var previous : Layer { return network.layers[id - 1] }
+    var next : Layer { return network.layers[id + 1] }
+    
     var description : String { return String(describing: id) + ": " + String(describing: type) +  " [" + String(describing: neurons.count) + "]" }
     var visualDescription : String { return neurons.reduce(into: "", {string, neuron in string += neuron.description + " \n"}) }
     
     
-    init(network : Network, size : Int, type : LayerType){
+    init(network : NeuralNetwork, size : Int, type : LayerType){
         
         self.network = network
         self.type = type
         
-        for _ in 0..<size{
-            neurons.append(Neuron(layer: self))
-        }
+        (0..<size).forEach{_ in neurons.append(Neuron(layer: self))}
     }
     
+    
+    func outputs(inputs: [Double]) -> [Double] {
+        return neurons.map { $0.activation }
+    }
 
-    func feedForward(){
-        if !isLast(){
-            for nextNeuron in getNextLayer().neurons{
-                nextNeuron.input = neurons.reduce(into: 0, { sum, localNeuron in sum += localNeuron.weights[nextNeuron]! * localNeuron.getActivation() })
-            }
-            
-            getNextLayer().feedForward()
+    
+    func calculateDelta(nextLayer: Layer? = nil, expected: [Double] = []){
+        
+        if type == LayerType.OUTPUT{
+            neurons.forEach { neuron in neuron.delta = derivativeSigmoid(neuron.prevOut) * (expected[neuron.id] - neuron.activation) }
+              //  neurons[n].delta = neurons[n].derivativeActivationFunction( neurons[n].inputCache) * (expected[n] - outputCache[n])
+            return
+        }
+        
+        for neuron in neurons{
+            let nextWeights = neuron.weights.values.map{ $0 }
+            let nextDeltas = nextLayer!.neurons.map { $0.delta }
+            let sumOfWeightsXDeltas = dotProduct(v1: nextWeights, v2: nextDeltas)
+            neuron.delta = derivativeSigmoid(neuron.prevOut) * sumOfWeightsXDeltas
         }
     }
-    
-    
-    func getOutput() -> Double{
-        return neurons.reduce(into: 0, { sum, neuron in sum += neuron.getActivation()})
-    }
-    
+
     
     func isHidden() -> Bool{
         return type == .HIDDEN
@@ -69,24 +76,12 @@ class Layer : Hashable{
     
     
     func isLast() -> Bool{
-        return id >= network.layers.count - 1
+        return id == network.layers.count - 1
     }
     
     
     func isLastHiddenLayer() -> Bool{
         return network.layers.count - 2 > id
     }
-    
-    
-    func getNextLayer() -> Layer{
-        return network.layers[id + 1]
-    }
-    
-    
-    func getPreviousLayer() -> Layer{
-        return network.layers[id - 1]
-    }
-    
-
     
 }
