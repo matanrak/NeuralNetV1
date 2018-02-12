@@ -1,8 +1,7 @@
 # NeuralNetV1
-My first attempt at neural network (and a very simple one at that)
-It uses a form of collaborative filtering to assume the user's opinion on a combination of cases.
+My first attempt at neural network (and a very simple one at that).
 
-In it's current form, it is used to determine how much a user will like / dislike a combination of genres (cases).
+In it's current form, I use it to determine how much a user will like / dislike a combination of genres (cases).
 To build a network you need to specifi it's structure. 
 In this example the hidden layer has 4 neurons and the output layer has 2.
 
@@ -13,24 +12,23 @@ In this example the hidden layer has 4 neurons and the output layer has 2.
 
 
 ## Training the network
-To train the network first input a set of neuron cases (i.e state):
+To train the network you enter the input and expected output:
 
-`network.setInput(input: [[0, 0, 1, 0]])`
+`network.train(input: [0, 1, 1, 0], expected: [0])`
 
-Then adjust according to the expected output, 
-In this example I expect only the second (output) layers recives an expected output:
+Then get the result for an intput like so: 
 
-`network.adjust(expected: [[], [0, 1]])`
+`network.getOutput([0, 0, 1, 0]))`
 
 
 
 ## Example:
 
 #### Inputs: (each ran 10,000 times):
-- input: [1, 0, 0, 0] / expected:  [[], [1, 0]]
-- input: [0, 0, 1, 0] / expected:  [[], [0, 1]]
-- input: [0, 1, 1, 0] / expected:  [[], [0, 1]]
-- input: [1, 0, 0, 1] / expected:  [[], [1, 0]]
+- input: [1, 0, 0, 0] / expected:  [1, 0]]
+- input: [0, 0, 1, 0] / expected:  [0, 1]]
+- input: [0, 1, 1, 0] / expected:  [0, 1]]
+- input: [1, 0, 0, 1] / expected:  [1, 0]]
     
 #### Outputs:
 - input: [1, 0, 0, 0] -> [0.9989, 0.0010] 
