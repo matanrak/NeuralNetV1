@@ -3,11 +3,11 @@ My first attempt at neural network (and a very simple one at that).
 
 In it's current form, I use it to determine how much a user will like / dislike a combination of genres (cases).
 To build a network you need to specifi it's structure. 
-In this example the hidden layer has 4 neurons and the output layer has 2.
+In this example the input layer has 4 neurons the hidden layer also has 4 neurons and the output layer has 2 neurons.
 
 ## Constructing the network:
 
-`var network = Network(structure: [4, 2])`
+`var network = Network(structure: [4, 4, 2])`
 
 
 
