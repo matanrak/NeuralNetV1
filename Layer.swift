@@ -48,19 +48,15 @@ public class Layer : Hashable{
     }
 
     
-    func calculateDelta(nextLayer: Layer? = nil, expected: [Double] = []){
-        
-        if type == LayerType.OUTPUT{
-            neurons.forEach { neuron in neuron.delta = derivativeSigmoid(neuron.prevOut) * (expected[neuron.id] - neuron.activation) }
-              //  neurons[n].delta = neurons[n].derivativeActivationFunction( neurons[n].inputCache) * (expected[n] - outputCache[n])
-            return
-        }
+    func calculateDelta(){
         
         for neuron in neurons{
-            let nextWeights = neuron.weights.values.map{ $0 }
-            let nextDeltas = nextLayer!.neurons.map { $0.delta }
-            let sumOfWeightsXDeltas = dotProduct(v1: nextWeights, v2: nextDeltas)
-            neuron.delta = derivativeSigmoid(neuron.prevOut) * sumOfWeightsXDeltas
+            let nextWeights : [Double] = neuron.weights.values.map{ $0 }
+            let nextDeltas = next.neurons.map { $0.delta }
+            let sumOfWeightsXDeltas = dotProduct(nextWeights, nextDeltas)
+            let derivative = neuron.activation * (1 - neuron.activation)
+           // print("DOT: ", sumOfWeightsXDeltas)
+            neuron.delta = derivative * sumOfWeightsXDeltas
         }
     }
 

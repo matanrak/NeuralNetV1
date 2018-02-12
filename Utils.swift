@@ -17,9 +17,9 @@ func sigmoid(_ i: Double) -> Double {
     
 // Thanks to Davecom from Github for this
 // awesome function that helped me out a-lot
-func dotProduct(v1: [Double], v2: [Double]) -> Double {
+func dotProduct(_ vec1: [Double], _ vec2: [Double]) -> Double {
     var answer: Double = 0.0
-    vDSP_dotprD(v1, 1, v2, 1, &answer, vDSP_Length(v1.count))
+    vDSP_dotprD(vec1, 1, vec2, 1, &answer, vDSP_Length(vec1.count))
     return answer
 }
 
